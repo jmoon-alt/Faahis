@@ -6,95 +6,143 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: "*" }));
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
-const SYSTEM_PROMPT = `أنت محلل قانوني خبير متخصص في القانون السعودي. مهمتك تحليل العقود باللغة العربية وتقديم تقرير واضح ومبسط.
+const SYSTEM_PROMPT = `أنت محلل قانوني خبير متخصص في القانون السعودي. مهمتك تحليل العقود باللغة العربية وتقديم تقرير دقيق ومبسّط وواقعي، يخدم الشركات والأفراد داخل المملكة العربية السعودية.
 
-استند دائماً للمصادر الرسمية السعودية التالية عند التحليل:
+استند دائمًا إلى المصادر الرسمية السعودية التالية فقط، ويجب أن يظهر اسم المصدر صراحةً في كل بند ضار وكل حق:
 - نظام العمل السعودي (وزارة الموارد البشرية والتنمية الاجتماعية)
-- نظام الإيجار ولوائحه التنفيذية (وزارة العدل - منصة إيجار)
-- نظام التأمينات الاجتماعية (المؤسسة العامة للتأمينات الاجتماعية)  
+- نظام الإيجار ولوائحه التنفيذية (وزارة العدل – منصة إيجار)
+- نظام التأمينات الاجتماعية (المؤسسة العامة للتأمينات الاجتماعية – GOSI)
 - نظام حماية المستهلك ونظام التجارة الإلكترونية (وزارة التجارة)
 - نظام الأحوال الشخصية والأنظمة الملكية (وزارة العدل / الديوان الملكي)
-- نظام الشركات ونظام العمل التجاري
+- نظام الشركات ونظام المعاملات التجارية (وزارة التجارة)
+- نظام مكافحة التستر ونظام مكافحة الاحتيال المالي (النيابة العامة)
+- نظام المعاملات المدنية الصادر بالمرسوم الملكي رقم (م/١٩١) لعام ١٤٤٤هـ
 
-عند تحليل أي عقد، قدّم النتيجة بصيغة JSON فقط بدون أي نص إضافي أو backticks، بالهيكل التالي:
+قواعد صارمة (يمنع كسرها):
+1. ممنوع منعًا باتًا اختلاق أي مرجع قانوني أو رقم مادة. إذا لم تكن متأكدًا من رقم المادة، اكتفِ باسم النظام والمصدر دون رقم.
+2. ممنوع اختراع بنود أو حقوق غير موجودة فعليًا في نص العقد. اعتمد فقط على ما هو منصوص في النص المرسل.
+3. إذا كان النص المرسل ليس عقدًا (مجرد رسالة، نص عام، أو كلام عشوائي)، أرجع JSON بهذا الشكل فقط: { "خطأ": "النص المرسل لا يبدو عقدًا قانونيًا" }
+4. ممنوع إضافة أي تحذير ديني أو أخلاقي خارج إطار النظام السعودي.
+5. أرجع JSON فقط بدون أي نص إضافي، وبدون backticks، وبدون شرح قبل أو بعد.
+
+عند تحليل أي عقد، قدّم النتيجة بصيغة JSON فقط بالهيكل التالي بدقة:
 {
   "نوع_العقد": "نوع العقد مثلاً: عقد إيجار / عقد عمل / عقد زواج / عقد تجاري / إلخ",
-  "ملخص": "ملخص مختصر للعقد بجملتين",
+  "ملخص": "ملخص مختصر للعقد بجملتين كحد أقصى",
   "بنود_ضدك": [
     {
-      "البند": "وصف البند الضار",
+      "البند": "وصف البند الضار كما ورد في العقد",
       "الخطورة": "عالية أو متوسطة أو منخفضة",
-      "السبب": "لماذا هذا البند ضارك",
-      "المرجع_القانوني": "المصدر السعودي الرسمي والمادة القانونية التي تدعم موقفك"
+      "السبب": "لماذا هذا البند ضار بك تحديدًا",
+      "المرجع_القانوني": "اسم النظام السعودي الرسمي (والمادة إن وُجدت بدقة) الذي يوضح الإشكال"
     }
   ],
   "حقوقك": [
     {
-      "الحق": "وصف الحق",
-      "أهميته": "مهم جداً أو مهم أو عادي",
+      "الحق": "وصف الحق الذي يكفله العقد أو النظام",
+      "أهميته": "مهم جدًا أو مهم أو عادي",
       "المرجع_القانوني": "المصدر السعودي الرسمي الذي يكفل هذا الحق"
     }
   ],
   "حقوق_مخفية": [
     {
-      "الحق": "حق قانوني مهم لا يعرفه كثيرون",
-      "التفصيل": "شرح لماذا هذا الحق مهم وكيف تستفيد منه",
+      "الحق": "حق قانوني مهم لا يعرفه كثيرون لكنه مكفول نظامًا",
+      "التفصيل": "شرح كيف تستفيد منه عمليًا",
       "المرجع_القانوني": "المصدر السعودي الرسمي"
     }
   ],
-  "توصية_عامة": "توصية مختصرة: هل العقد جيد، يحتاج تعديل، أو خطير"
+  "توصية_عامة": "توصية مختصرة وواضحة: هل العقد جيد، يحتاج تعديل، أو خطير ولا يُنصح بالتوقيع"
 }`;
 
-app.post("/analyze", async (req, res) => {
-  const { contractText } = req.body;
-
-  if (!contractText || contractText.trim().length < 20) {
-    return res.status(400).json({ error: "نص العقد قصير جداً" });
+async function analyzeContract(contractText) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error("مفتاح ANTHROPIC_API_KEY غير مضبوط في إعدادات Railway");
   }
 
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2500,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: `حلّل هذا العقد وفق المصادر الرسمية السعودية فقط، والتزم بهيكل JSON المحدد:\n\n${contractText}`
+        }
+      ]
+    })
+  });
+
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error.message || "خطأ من مزود الذكاء الاصطناعي");
+  }
+
+  const text = data.content?.map((i) => i.text || "").join("") || "";
+  const clean = text.replace(/```json|```/g, "").trim();
+
+  // التحقق أن الناتج JSON صحيح قبل إرساله للواجهة
+  JSON.parse(clean);
+  return clean;
+}
+
+// ✅ هذا هو الـ endpoint الذي يستدعيه App.jsx
+app.post("/api/ask", async (req, res) => {
   try {
-    const response = await fetch("https://faahis-production.up.railway.app/analyze", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
-        system: SYSTEM_PROMPT,
-        messages: [
-          {
-            role: "user",
-            content: `حلّل هذا العقد:\n\n${contractText}`,
-          },
-        ],
-      }),
-    });
+    const { question } = req.body || {};
 
-    const data = await response.json();
-
-    if (data.error) {
-      return res.status(500).json({ error: data.error.message });
+    if (!question || typeof question !== "string" || question.trim().length < 30) {
+      return res.status(400).json({
+        error: "نص العقد قصير جدًا، الرجاء لصق نص العقد كاملًا (٣٠ حرفًا على الأقل)"
+      });
     }
 
-    const text = data.content?.map((i) => i.text || "").join("") || "";
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
-
-    res.json(parsed);
+    const answer = await analyzeContract(question);
+    res.json({ answer });
   } catch (err) {
     console.error("Server error:", err.message);
-    res.status(500).json({ error: "حدث خطأ في الخادم، حاول مرة أخرى" });
+    res.status(500).json({
+      error: err.message || "حدث خطأ في الخادم، حاول مرة أخرى"
+    });
   }
 });
 
+// (اختياري) endpoint قديم للتوافق مع أي نسخة سابقة
+app.post("/analyze", async (req, res) => {
+  try {
+    const { contractText } = req.body || {};
+    if (!contractText || contractText.trim().length < 30) {
+      return res.status(400).json({ error: "نص العقد قصير جدًا" });
+    }
+    const answer = await analyzeContract(contractText);
+    res.json(JSON.parse(answer));
+  } catch (err) {
+    console.error("Server error:", err.message);
+    res.status(500).json({ error: err.message || "حدث خطأ في الخادم" });
+  }
+});
+
+// فحص حالة السيرفر
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", service: "Faahis API" });
+});
+
+app.get("/", (_req, res) => {
+  res.json({ status: "ok", service: "Faahis API", endpoint: "/api/ask" });
+});
+
 app.listen(PORT, () => {
-  console.log(`✅ Faahis server running on http://localhost:${PORT}`);
+  console.log(`Faahis server running on http://localhost:${PORT}`);
 });
