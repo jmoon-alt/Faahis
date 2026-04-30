@@ -73,7 +73,7 @@ async function analyzeContract(contractText) {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-5",
-      max_tokens: 2500,
+      max_tokens: 4096,
       system: SYSTEM_PROMPT,
       messages: [
         {
