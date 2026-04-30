@@ -143,6 +143,6 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok", service: "Faahis API", endpoint: "/api/ask" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Faahis server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Faahis server running on port ${PORT}`);
 });
