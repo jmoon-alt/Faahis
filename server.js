@@ -110,7 +110,7 @@ app.post("/api/ask", async (req, res) => {
     }
 
     const answer = await analyzeContract(question);
-    res.json({ answer });
+    try{const s=answer.slice(answer.indexOf("{"),answer.lastIndexOf("}")+1);res.json(JSON.parse(s));}catch(e){res.status(500).json({error:"ÎØÃ Ýí ÇáÊÍáíá"})}
   } catch (err) {
     console.error("Server error:", err.message);
     res.status(500).json({
@@ -127,7 +127,7 @@ app.post("/analyze", async (req, res) => {
       return res.status(400).json({ error: "Ù†Øµ Ø§Ù„Ø¹Ù‚Ø¯ Ù‚ØµÙŠØ± Ø¬Ø¯Ù‹Ø§" });
     }
     const answer = await analyzeContract(contractText);
-    res.json(JSON.parse(answer));
+    try{const s=answer.slice(answer.indexOf("{"),answer.lastIndexOf("}")+1);res.json(JSON.parse(s));}catch(e){res.status(500).json({error:"ÎØÃ Ýí ÇáÊÍáíá"})}
   } catch (err) {
     console.error("Server error:", err.message);
     res.status(500).json({ error: err.message || "Ø­Ø¯Ø« Ø®Ø·Ø£ ÙÙŠ Ø§Ù„Ø®Ø§Ø¯Ù…" });
@@ -146,3 +146,5 @@ app.get("/", (_req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Faahis server running on port ${PORT}`);
 });
+
+
