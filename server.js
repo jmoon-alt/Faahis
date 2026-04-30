@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 const PORT = 3001;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 const SYSTEM_PROMPT = `أنت محلل قانوني خبير متخصص في القانون السعودي. مهمتك تحليل العقود باللغة العربية وتقديم تقرير واضح ومبسط.
@@ -58,7 +58,7 @@ app.post("/analyze", async (req, res) => {
   }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://faahis-production.up.railway.app/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
