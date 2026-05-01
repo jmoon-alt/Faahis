@@ -53,7 +53,7 @@ export default function Faahis() {
         throw new Error(data.error || "حدث خطأ أثناء التحليل");
       }
 
-      setResult(JSON.parse(data.answer));
+      setResult(data);
     } catch (err) {
       setError(err.message || "حدث خطأ أثناء التحليل، حاول مرة ثانية");
     } finally {
