@@ -74,11 +74,15 @@ async function analyzeContract(contractText) {
     body: JSON.stringify({
       model: "claude-sonnet-4-5",
       max_tokens: 4096,
+      temperature:0,
       system: SYSTEM_PROMPT,
       messages: [
         {
           role: "user",
-          content: `حلّل هذا العقد وفق المصادر الرسمية السعودية فقط، والتزم بهيكل JSON المحدد:\n\n${contractText}`
+          content:`حلل هذا العقد وأرجع JSON فقط بهذا الهيكل المختصر:
+        {"نوع_العقد":"","ملخص":"جملتين فقط","بنود_ضدك":[{"البند":"","الخطورة":"عالية أو متوسطة أو منخفضة","السبب":""}],"حقوقك":[{"الحق":"","أهميته":""}],"توصية_عامة":""}
+         لا تزيد على 3 بنود و3 حقوق. العقد:
+${contractText}`
         }
       ]
     })
@@ -110,7 +114,7 @@ app.post("/api/ask", async (req, res) => {
     }
 
     const answer = await analyzeContract(question);
-    try{const s=answer.slice(answer.indexOf("{"),answer.lastIndexOf("}")+1);res.json(JSON.parse(s));}catch(e){res.status(500).json({error:"��� �� �������"})}
+    try{const s=answer.slice(answer.indexOf("{"),answer.lastIndexOf("}")+1);res.json(JSON.parse(s));}catch(e){res.status(500).json({error:"��� �� �������"})}
   } catch (err) {
     console.error("Server error:", err.message);
     res.status(500).json({
@@ -127,7 +131,7 @@ app.post("/analyze", async (req, res) => {
       return res.status(400).json({ error: "نص العقد قصير جدًا" });
     }
     const answer = await analyzeContract(contractText);
-    try{const s=answer.slice(answer.indexOf("{"),answer.lastIndexOf("}")+1);res.json(JSON.parse(s));}catch(e){res.status(500).json({error:"��� �� �������"})}
+    try{const s=answer.slice(answer.indexOf("{"),answer.lastIndexOf("}")+1);res.json(JSON.parse(s));}catch(e){res.status(500).json({error:"��� �� �������"})}
   } catch (err) {
     console.error("Server error:", err.message);
     res.status(500).json({ error: err.message || "حدث خطأ في الخادم" });
@@ -146,6 +150,5 @@ app.get("/", (_req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Faahis server running on port ${PORT}`);
 });
-
 
 
